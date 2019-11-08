@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 '''Python interface to Things.app's Applescript interface.
 
@@ -23,7 +23,7 @@ STATUS_MAP = {
 
 def getThings():
     return ScriptingBridge.SBApplication.applicationWithBundleIdentifier_(
-        "com.culturedcode.things")
+        "com.culturedcode.ThingsMac")
 
 class ThingsObject(object):
     def __init__(self):
