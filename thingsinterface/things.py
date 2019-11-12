@@ -112,10 +112,11 @@ class ToDo(ThingsObject):
         return ToDo(todo_obj=things.toDos().objectWithID_(desired_id))
 
     def __init__(self, name="", tags=[], notes="", project="",
+                 creation_date="", modification_date="",
                  location="Inbox", creation_area="", todo_obj=None):
         ThingsObject.__init__(self)
 
-        if not todo_obj:
+        if not todo_obj:  # create a new To-Do
             self.name = name
             if location and creation_area:
                 sys.stderr.write(("WARNING! Inserting to a location and a creation_area at the "
@@ -170,6 +171,7 @@ class ToDo(ThingsObject):
 
         return cls(todo_object.name(), tags=todo_object.tagNames().split(", "),
                    notes=todo_object.name(), creation_area=todo_object.area().name(),
+                   creation_date=todo_object.creationDate(), modification_date=todo_object.modificationDate(),
                    todo_obj=todo_object)
 
     @staticmethod
