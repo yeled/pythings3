@@ -44,7 +44,24 @@ class Projects(ThingsObject):
     """
     def __init__(self):
         ThingsObject.__init__(self)
-        self.projects = [ i for i in self.things.projects() ]
+        self.projects = [Project(i) for i in self.things.projects()]
+
+    def __len__(self):
+        """Return the number of Project objects. """
+        return len(self.projects)
+
+    def __iter__(self):
+        """Iterate over the Project objects."""
+        for project in self.projects:
+            yield project
+
+    def __nonzero__(self):
+        """Are there any Projects?"""
+        if self.__len__() > 0:
+            return True
+        else:
+            return False
+
 
 class Project(object):
     def __init__(self, project_object):
@@ -55,7 +72,7 @@ class Project(object):
             "creation_date": project_object.creationDate(),
             "modification_date": project_object.modificationDate(),
             "thingsid": project_object.id(),
-            "todos": [ ToDo.fromSBObject(i) for i in project_object.toDos() ],
+            "todos": [ToDo.fromSBObject(i) for i in project_object.toDos()],
             "tags": project_object.tagNames().split(", "),
             "area": project_object.area().name(),
             "completion_date": project_object.completionDate(),
@@ -260,16 +277,31 @@ class Areas(ThingsObject):
         #x = Area(z)
         #print x.toDos
 
+    def __len__(self):
+        """Return the number of Area objects. """
+        return len(self.areas)
+
+    def __iter__(self):
+        """Iterate over the Area objects."""
+        for area in self.areas:
+            yield area
+
+    def __nonzero__(self):
+        """Are there any Areas?"""
+        if self.__len__() > 0:
+            return True
+        else:
+            return False
+
 
 class Area(object):
     def __init__(self, area_object):
         self.__dict__ = {
             "name": area_object.name(),
             "thingsid": area_object.id(),
-            "toDos": [ ToDo.fromSBObject(i) for i in area_object.toDos() ],
+            "todos": [ ToDo.fromSBObject(i) for i in area_object.toDos() ],
             "tags": area_object.tagNames().split(", "),
-            "suspended": True if area_object.suspended() else False
-            #"projects": area_object.projects()
+            # "suspended": True if area_object.suspended() else False
             }
 
 
