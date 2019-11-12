@@ -174,7 +174,9 @@ for todo in ToDos('GitHub'):
             "thingsid": todo_object.id(),
             "tags": todo_object.tagNames().split(", "),
             "area": todo_object.area().name(),
+            "area_id": todo_object.area().id(),  # THMAreaParentSource/uuid
             "project": todo_object.project().name(),
+            "project_id": todo_object.project().id(),
             # "show": todo_object.show(),  # will bring application to the front
             "completion_date": todo_object.completionDate(),
             "completed": True if todo_object.completionDate() else False,
