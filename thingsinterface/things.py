@@ -109,7 +109,7 @@ class ToDo(ThingsObject):
                 "name": name,
                 "tagNames": ", ".join(tags),
                 "notes": notes,
-                "project": project,  # needs to be the thingsid
+                # "project": project,  # needs to be the thingsid
             })
             # print(self.todo_object)
 
