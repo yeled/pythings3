@@ -94,7 +94,7 @@ class ToDo(ThingsObject):
         things = getThings()
         return ToDo(todo_obj=things.toDos().objectWithID_(desired_id))
 
-    def __init__(self, name="", tags=[], notes="",
+    def __init__(self, name="", tags=[], notes="", project="",
                  location="Inbox", creation_area="", todo_obj=None):
         ThingsObject.__init__(self)
 
@@ -109,7 +109,9 @@ class ToDo(ThingsObject):
                 "name": name,
                 "tagNames": ", ".join(tags),
                 "notes": notes,
+                "project": project,  # needs to be the thingsid
             })
+            # print(self.todo_object)
 
             assigned = False
             for thingslist in self.things.lists():
@@ -144,6 +146,7 @@ class ToDo(ThingsObject):
         self.thingsid = self.todo_object.id()
         self.creation_date = self.todo_object.creationDate()
         self.modification_date = self.todo_object.modificationDate()
+        self.project = self.todo_object.project().name()
 
     @classmethod
     def fromSBObject(cls, todo_object):
@@ -155,13 +158,13 @@ class ToDo(ThingsObject):
     @staticmethod
     def _makeDictFromToDo(todo_object):
         """
-        import pprint
-        import sys
-        pp = pprint.PrettyPrinter(indent=4)
-        sys.path.append('../pythings3')
-        from thingsinterface import ToDos, ToDo, Project, Projects
-        for todo in ToDos('GitHub'):
-            pp.pprint(todo._makeDictFromToDo(todo.todo_object))
+import pprint
+import sys
+pp = pprint.PrettyPrinter(indent=4)
+sys.path.append('../pythings3')
+from thingsinterface import ToDos, ToDo, Project, Projects
+for todo in ToDos('GitHub'):
+    pp.pprint(todo._makeDictFromToDo(todo.todo_object))
         """
         return {
             "name": todo_object.name(),
@@ -171,6 +174,8 @@ class ToDo(ThingsObject):
             "thingsid": todo_object.id(),
             "tags": todo_object.tagNames().split(", "),
             "area": todo_object.area().name(),
+            "project": todo_object.project().name(),
+            # "show": todo_object.show(),  # will bring application to the front
             "completion_date": todo_object.completionDate(),
             "completed": True if todo_object.completionDate() else False,
             "contact": todo_object.contact().name()
