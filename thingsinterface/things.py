@@ -5,14 +5,9 @@
 Lol! :'(
 '''
 
-try:
-    import ScriptingBridge
-except ImportError as exc:
-    raise ImportError(("Please use an OS X specific version of Python "
-                       "with ScriptingBridge support"))
-
-from collections import namedtuple
 import sys
+import ScriptingBridge
+
 
 # These integers are used to set the status of a task internally.
 STATUS_MAP = {
@@ -21,17 +16,33 @@ STATUS_MAP = {
     "cancelled": 1952736108 #"tdcl"
 }
 
+
 def getThings():
     return ScriptingBridge.SBApplication.applicationWithBundleIdentifier_(
         "com.culturedcode.ThingsMac")
+
 
 class ThingsObject(object):
     def __init__(self):
         self.things = getThings()
 
-#TODO
+
 class Projects(ThingsObject):
-    def __init__(self, **entries):
+    """
+    import ScriptingBridge
+    import sys
+    sys.path.append('../pythings3')
+    from thingsinterface import ToDos, ToDo, Project, Projects
+    getthings = ScriptingBridge.SBApplication.applicationWithBundleIdentifier_("com.culturedcode.ThingsMac")
+
+    for k in getthings.projects():
+    print(k.name())
+
+    for proj in Projects():
+        print("\"{}\" ({}) which is in {}".format(proj.name(), proj.id(), proj.area().id()))
+
+    """
+    def __init__(self):
         ThingsObject.__init__(self)
         self.projects = [ i for i in self.things.projects() ]
 
@@ -56,7 +67,7 @@ class Project(object):
     def complete(self):
         #TODO
         # Implementation involves moving to List "Logbook"
-        raise NotImplemented
+        raise NotImplementedError
 
 class ToDo(ThingsObject):
 
@@ -143,6 +154,15 @@ class ToDo(ThingsObject):
 
     @staticmethod
     def _makeDictFromToDo(todo_object):
+        """
+        import pprint
+        import sys
+        pp = pprint.PrettyPrinter(indent=4)
+        sys.path.append('../pythings3')
+        from thingsinterface import ToDos, ToDo, Project, Projects
+        for todo in ToDos('GitHub'):
+            pp.pprint(todo._makeDictFromToDo(todo.todo_object))
+        """
         return {
             "name": todo_object.name(),
             "notes": todo_object.notes(),
@@ -171,8 +191,8 @@ class ToDo(ThingsObject):
     def __cmp__(self, other):
         return self.thingsid == other.thingsid
 
-class ToDos(ThingsObject):
 
+class ToDos(ThingsObject):
     def __init__(self, thingslist=None):
         ThingsObject.__init__(self)
         selectedlist = None
@@ -233,6 +253,7 @@ class Areas(ThingsObject):
         #x = Area(z)
         #print x.toDos
 
+
 class Area(object):
     def __init__(self, area_object):
         self.__dict__ = {
@@ -244,17 +265,21 @@ class Area(object):
             #"projects": area_object.projects()
             }
 
+
 class Contacts(ThingsObject):
     #TODO
     pass
+
 
 class Contact(object):
     #TODO
     pass
 
+
 def main():
     a = ToDo(name="Test", tags=["lol", "hax"],
              notes="definitely a test", location="Today") #, creation_area="Home")
+
 
 if __name__ == "__main__":
     main()

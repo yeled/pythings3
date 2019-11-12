@@ -1,1 +1,1 @@
-from thingsinterface.things import ToDo, ToDos, STATUS_MAP
+from thingsinterface.things import Project, Projects, ToDo, ToDos, STATUS_MAP
