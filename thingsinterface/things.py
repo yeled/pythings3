@@ -5,14 +5,9 @@
 Lol! :'(
 '''
 
-try:
-    import ScriptingBridge
-except ImportError as exc:
-    raise ImportError(("Please use an OS X specific version of Python "
-                       "with ScriptingBridge support"))
-
-from collections import namedtuple
 import sys
+import ScriptingBridge
+
 
 # These integers are used to set the status of a task internally.
 STATUS_MAP = {
@@ -21,73 +16,111 @@ STATUS_MAP = {
     "cancelled": 1952736108 #"tdcl"
 }
 
+
 def getThings():
     return ScriptingBridge.SBApplication.applicationWithBundleIdentifier_(
         "com.culturedcode.ThingsMac")
+
 
 class ThingsObject(object):
     def __init__(self):
         self.things = getThings()
 
-#TODO
+
 class Projects(ThingsObject):
-    def __init__(self, **entries):
+    """
+    import ScriptingBridge
+    import sys
+    sys.path.append('../pythings3')
+    from thingsinterface import ToDos, ToDo, Project, Projects
+    getthings = ScriptingBridge.SBApplication.applicationWithBundleIdentifier_("com.culturedcode.ThingsMac")
+
+    for k in getthings.projects():
+    print(k.name())
+
+    for proj in Projects():
+        print("\"{}\" ({}) which is in {}".format(proj.name(), proj.id(), proj.area().id()))
+
+    """
+    def __init__(self):
         ThingsObject.__init__(self)
-        self.projects = [ i for i in self.things.projects() ]
+        self.projects = [Project(i) for i in self.things.projects()]
+
+    def __len__(self):
+        """Return the number of Project objects. """
+        return len(self.projects)
+
+    def __iter__(self):
+        """Iterate over the Project objects."""
+        for project in self.projects:
+            yield project
+
+    def __nonzero__(self):
+        """Are there any Projects?"""
+        if self.__len__() > 0:
+            return True
+        else:
+            return False
+
 
 class Project(object):
-    def __init__(self, project_object):
+
+    @staticmethod
+    def _getProjectByID(desired_id):
+        things = getThings()
+        return Project(project_obj=things.projects().objectWithID_(desired_id))
+
+    def __init__(self, name="",
+                 tags=[],
+                 notes="",
+                 project_object=None):
         ThingsObject.__init__(self)
-        self.__dict__ = {
-            "name": project_object.name(),
-            "notes": project_object.notes(),
-            "creation_date": project_object.creationDate(),
-            "modification_date": project_object.modificationDate(),
-            "thingsid": project_object.id(),
-            "todos": [ ToDo.fromSBObject(i) for i in project_object.toDos() ],
-            "tags": project_object.tagNames().split(", "),
-            "area": project_object.area().name(),
-            "completion_date": project_object.completionDate(),
-            # hack
-            "completed": True if project_object.completionDate() else False,
-            "contact": project_object.contact().name()
-        }
+
+        # self.__dict__ = {
+        #     "name": project_object.name(),
+        #     "notes": project_object.notes(),
+        #     "creation_date": project_object.creationDate(),
+        #     "modification_date": project_object.modificationDate(),
+        #     "thingsid": project_object.id(),
+        #     "todos": [ToDo.fromSBObject(i) for i in project_object.toDos()],
+        #     "tags": project_object.tagNames().split(", "),
+        #     "area": project_object.area().name(),
+        #     "completion_date": project_object.completionDate(),
+        #     # hack
+        #     "completed": True if project_object.completionDate() else False,
+        #     "contact": project_object.contact().name()
+        # }
+
+        if not project_object:  # create a new Project
+            self.name = name
+            self.project_object = self.things.classForScriptingClass_("project").alloc()
+            self.project_object = self.project_object.initWithProperties_({
+                "name": name,
+                "tagNames": ", ".join(tags),
+                "notes": notes,
+            })
+            things = getThings()
+            things.toDos().append(self.project_object)
 
     def complete(self):
         #TODO
         # Implementation involves moving to List "Logbook"
-        raise NotImplemented
+        raise NotImplementedError
+
 
 class ToDo(ThingsObject):
-
-    """Unique functions of a toDo object: ['show', 'tagNames',
-    'setProject_', 'modificationDate', 'close', 'id', 'setArea_',
-    'completionDate', 'area', 'setContact_', 'dueDate',
-    'setModificationDate_', 'printWithProperties_printDialog_',
-    'cancellationDate', 'status', 'tags', 'moveTo_', 'creationDate',
-    'duplicateTo_withProperties_', 'setTagNames_', 'scheduleFor_',
-    'name', 'edit', 'setCreationDate_', 'setCompletionDate_',
-    'setCancellationDate_', 'project', 'activationDate', 'contact',
-    'setStatus_', 'setName_', 'setDueDate_', 'setNotes_', 'notes',
-    'delete']
-
-    AppleScript properties of a "to do" - id, tagNames,
-    cancellationDate, creationDate, dueDate, contact, modficationDate,
-    project, A specific osascript ID (referenced in the bridge
-    object), notes, activationDate, completionDate, status, name
-
-    """
 
     @staticmethod
     def _getTodoByID(desired_id):
         things = getThings()
         return ToDo(todo_obj=things.toDos().objectWithID_(desired_id))
 
-    def __init__(self, name="", tags=[], notes="",
+    def __init__(self, name="", tags=[], notes="", project="",
+                 creation_date="", modification_date="",
                  location="Inbox", creation_area="", todo_obj=None):
         ThingsObject.__init__(self)
 
-        if not todo_obj:
+        if not todo_obj:  # create a new To-Do
             self.name = name
             if location and creation_area:
                 sys.stderr.write(("WARNING! Inserting to a location and a creation_area at the "
@@ -99,14 +132,36 @@ class ToDo(ThingsObject):
                 "tagNames": ", ".join(tags),
                 "notes": notes,
             })
+            # print(self.todo_object)
 
             assigned = False
             for thingslist in self.things.lists():
+                # print("list: {}".format(thingslist.name()))
                 if thingslist.name() == location:
-                    thingslist.toDos().append(self.todo_object)
-                    assigned = True
+                    # print("a match, location/thingslist == {}/{}".format(location, thingslist.name()))
+                    proj_assigned = False
+                    for proj in self.things.projects():
+                        if proj.name() == project:
+                            # print("proj: {}".format(project))
+                            if not todo_obj:
+                                # print("ahoy!")
+                                proj.toDos().append(self.todo_object)
+                                proj_assigned = True
+                        # else:
+                            # if proj is not None:
+                                # Project(proj)
+            if not proj_assigned:  # Projects are more-specific than Areas. Therefore only put in an Area if not in a Project
+                thingslist.toDos().append(self.todo_object)
+                assigned = True
+                # print("created a basic todo! well done you.")
 
-            if not assigned:
+            if not assigned:  # Projects are more-specific than Areas. Therefore only put in an Area if not in a Project
+                for area in self.things.areas():
+                    if area.name() == creation_area:
+                        # print("area: {}".format(creation_area))
+                        if not todo_obj:
+                            area.toDos().append(self.todo_object)
+            if not assigned and not proj_assigned:
                 # In rare cases where there has been some kind of
                 # weird internal OS X fuck-up, self.things.lists()
                 # will be empty despite Things performing perfectly
@@ -117,32 +172,40 @@ class ToDo(ThingsObject):
                     ("Couldn't assign Things ToDo \"%s\" to a list "
                      "(location %s, available locations: %s.") % (
                          self.name, location, str(
-                             [ t.name() for t in self.things.lists() ]))
+                             [t.name() for t in self.things.lists()]))
                 )
-
-            for area in self.things.areas():
-                if area.name() == creation_area:
-                    if not todo_obj:
-                        area.toDos().append(self.todo_object)
         else:
             self.name = todo_obj.name()
             self.todo_object = todo_obj
 
         self.tags = tags
 
-        self.thingsid = self.todo_object.id()
-        self.creation_date = self.todo_object.creationDate()
-        self.modification_date = self.todo_object.modificationDate()
+        # print(self.project)
+        # self.project = project
+        # self.thingsid = self.todo_object.id()
+        # self.creation_date = self.todo_object.creationDate()
+        # self.modification_date = self.todo_object.modificationDate()
 
     @classmethod
     def fromSBObject(cls, todo_object):
 
         return cls(todo_object.name(), tags=todo_object.tagNames().split(", "),
                    notes=todo_object.name(), creation_area=todo_object.area().name(),
+                   project=todo_object.project(),
+                   creation_date=todo_object.creationDate(), modification_date=todo_object.modificationDate(),
                    todo_obj=todo_object)
 
     @staticmethod
     def _makeDictFromToDo(todo_object):
+        """
+import pprint
+import sys
+pp = pprint.PrettyPrinter(indent=4)
+sys.path.append('../pythings3')
+from thingsinterface import ToDos, ToDo, Project, Projects
+for todo in ToDos('GitHub'):
+    pp.pprint(todo._makeDictFromToDo(todo.todo_object))
+        """
         return {
             "name": todo_object.name(),
             "notes": todo_object.notes(),
@@ -151,6 +214,10 @@ class ToDo(ThingsObject):
             "thingsid": todo_object.id(),
             "tags": todo_object.tagNames().split(", "),
             "area": todo_object.area().name(),
+            "area_id": todo_object.area().id(),  # THMAreaParentSource/uuid
+            "project": todo_object.project(),
+            "project_id": todo_object.project().id(),
+            # "show": todo_object.show(),  # will bring application to the front
             "completion_date": todo_object.completionDate(),
             "completed": True if todo_object.completionDate() else False,
             "contact": todo_object.contact().name()
@@ -171,8 +238,8 @@ class ToDo(ThingsObject):
     def __cmp__(self, other):
         return self.thingsid == other.thingsid
 
-class ToDos(ThingsObject):
 
+class ToDos(ThingsObject):
     def __init__(self, thingslist=None):
         ThingsObject.__init__(self)
         selectedlist = None
@@ -233,28 +300,48 @@ class Areas(ThingsObject):
         #x = Area(z)
         #print x.toDos
 
+    def __len__(self):
+        """Return the number of Area objects. """
+        return len(self.areas)
+
+    def __iter__(self):
+        """Iterate over the Area objects."""
+        for area in self.areas:
+            yield area
+
+    def __nonzero__(self):
+        """Are there any Areas?"""
+        if self.__len__() > 0:
+            return True
+        else:
+            return False
+
+
 class Area(object):
     def __init__(self, area_object):
         self.__dict__ = {
             "name": area_object.name(),
             "thingsid": area_object.id(),
-            "toDos": [ ToDo.fromSBObject(i) for i in area_object.toDos() ],
+            "todos": [ ToDo.fromSBObject(i) for i in area_object.toDos() ],
             "tags": area_object.tagNames().split(", "),
-            "suspended": True if area_object.suspended() else False
-            #"projects": area_object.projects()
+            # "suspended": True if area_object.suspended() else False
             }
+
 
 class Contacts(ThingsObject):
     #TODO
     pass
 
+
 class Contact(object):
     #TODO
     pass
 
+
 def main():
     a = ToDo(name="Test", tags=["lol", "hax"],
              notes="definitely a test", location="Today") #, creation_area="Home")
+
 
 if __name__ == "__main__":
     main()
